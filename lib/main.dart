@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:football_shop/menu.dart';
+import 'package:football_shop/screens/menu.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,7 +10,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use a simple MaterialApp root
     return MaterialApp(
       title: 'Football Shop',
       theme: ThemeData(

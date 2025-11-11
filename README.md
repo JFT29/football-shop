@@ -44,3 +44,48 @@ BuildContext tells a widget where it sits in the widget tree. It’s basically a
 Hot reload updates the code in the running app without resetting its state. It’s useful for quick UI tweaks because it keeps everything where it was — like form data, page position, or variables.
 
 Hot restart completely restarts the app, clearing any saved state. It’s slower but necessary when the change affects app initialization or global variables. In short, hot reload keeps your progress, while hot restart starts from scratch.
+
+------------------------------------------
+
+## Answering the Questions for Assignment 8
+
+### Q1. Explain the difference between `Navigator.push()` and `Navigator.pushReplacement()` in Flutter. In what context of your application is each best used?
+
+`Navigator.push()` adds a new page on top of the navigation stack, allowing the user to go back to the previous page using the back button. It’s used when the previous page should still be accessible, such as when moving from the main menu to the product form page. In my app, I use `Navigator.push()` when opening the **Create Product Form**, so the user can return to the home menu afterward.
+
+`Navigator.pushReplacement()`, on the other hand, replaces the current page in the stack entirely. The previous page is removed, meaning the user can’t navigate back to it. This is more suitable for transitions where returning doesn’t make sense, such as moving from a login page to a main dashboard after authentication.
+
+In summary:
+- `Navigator.push()` → adds a new page, keeps the previous one (used for normal navigation).
+- `Navigator.pushReplacement()` → replaces the current page, removing the previous one (used for permanent transitions).
+
+
+### Q2. How do you use hierarchy widgets like `Scaffold`, `AppBar`, and `Drawer` to build a consistent page structure in your application?
+
+`Scaffold`, `AppBar`, and `Drawer` provide a clean, consistent structure across all screens.  
+- **Scaffold** is the base layout for each page, giving a standard structure that holds an app bar, body, and drawer.  
+- **AppBar** defines the title and navigation bar at the top, maintaining visual consistency and quick navigation access.  
+- **Drawer** acts as a sidebar menu, letting users navigate between pages like *Home*, *Create Product*, or *About Page* without rebuilding the layout manually.
+
+In this app, every major page (menu and product form) uses the same `Scaffold` structure with a matching `AppBar` and the same `LeftDrawer` widget. This ensures that navigation and branding stay consistent no matter which page the user visits.
+
+### Q3. In the context of user interface design, what do you think are the advantages of using layout widgets like `Padding`, `SingleChildScrollView`, and `ListView` when displaying form elements? Provide usage examples from your application.
+
+Layout widgets make the UI readable, responsive, and user-friendly.  
+- **Padding** adds breathing space between form fields, preventing the UI from looking cluttered.  
+- **SingleChildScrollView** allows the form to scroll vertically if it’s too long for the screen, which prevents overflow errors and keeps it accessible on smaller devices.  
+- **ListView** or column-like layouts make it easy to stack widgets vertically in an organized way.
+
+For example, in my `ProductFormPage`, the form fields for *name*, *price*, *thumbnail*, *category*, and *description* are wrapped in a `SingleChildScrollView` with consistent `Padding` for each field. This makes the form easy to read and scroll through even on small screens, ensuring a smooth and pleasant user experience.
+
+### Q4. How do you set the color theme so that your Football Shop has a visual identity that is consistent with the shop brand?
+
+The color theme is defined in `main.dart` inside the `MaterialApp` widget using a `ThemeData` configuration. I use a **blue primary color** and **indigo accents**, matching the Football Shop’s branding style inspired by professional sports shops.
+
+Example:
+```dart
+theme: ThemeData(
+  colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue)
+      .copyWith(secondary: Colors.indigoAccent),
+  useMaterial3: true,
+),

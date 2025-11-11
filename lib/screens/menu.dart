@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:football_shop/widgets/left_drawer.dart';
+import 'package:football_shop/screens/product_form.dart'; // <-- add this
 
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key});
 
   void _showSnack(BuildContext context, String message) {
-    // Use ScaffoldMessenger to show a SnackBar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
-    // Simple, centered three-button layout (icon + text)
     return Scaffold(
       appBar: AppBar(
         title: const Text('Football Shop'),
       ),
+      drawer: const LeftDrawer(),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -25,7 +26,7 @@ class MyHomePage extends StatelessWidget {
             runSpacing: 16,
             alignment: WrapAlignment.center,
             children: [
-              // 1) All Products (BLUE)
+              // 1) All Products
               ElevatedButton.icon(
                 icon: const Icon(Icons.list),
                 label: const Text('All Products'),
@@ -34,10 +35,13 @@ class MyHomePage extends StatelessWidget {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 ),
-                onPressed: () => _showSnack(context, 'You have pressed the All Products button'),
+                onPressed: () => _showSnack(
+                  context,
+                  'You have pressed the All Products button',
+                ),
               ),
 
-              // 2) My Products (GREEN)
+              // 2) My Products
               ElevatedButton.icon(
                 icon: const Icon(Icons.inventory),
                 label: const Text('My Products'),
@@ -46,10 +50,13 @@ class MyHomePage extends StatelessWidget {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 ),
-                onPressed: () => _showSnack(context, 'You have pressed the My Products button'),
+                onPressed: () => _showSnack(
+                  context,
+                  'You have pressed the My Products button',
+                ),
               ),
 
-              // 3) Create Product (RED)
+              // 3) Create Product — SnackBar then push (so Back works)
               ElevatedButton.icon(
                 icon: const Icon(Icons.add),
                 label: const Text('Create Product'),
@@ -58,7 +65,13 @@ class MyHomePage extends StatelessWidget {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 ),
-                onPressed: () => _showSnack(context, 'You have pressed the Create Product button'),
+                onPressed: () {
+                  _showSnack(context, 'You have pressed the Create Product button');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProductFormPage()),
+                  );
+                },
               ),
             ],
           ),
