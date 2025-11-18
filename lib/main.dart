@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:football_shop/screens/menu.dart';
+import 'package:provider/provider.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+
+import 'package:football_shop/screens/login.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    Provider<CookieRequest>(
+      create: (_) => CookieRequest(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -17,7 +25,8 @@ class MyApp extends StatelessWidget {
             .copyWith(secondary: Colors.blueAccent),
         useMaterial3: true,
       ),
-      home: const MyHomePage(),
+      // Start at LoginPage instead of MyHomePage
+      home: const LoginPage(),
     );
   }
 }

@@ -1,5 +1,11 @@
+// lib/screens/product_form.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+
 import 'package:football_shop/widgets/left_drawer.dart';
+
+const String baseUrl = 'http://localhost:8000';
 
 class ProductFormPage extends StatefulWidget {
   const ProductFormPage({super.key});
@@ -19,8 +25,13 @@ class _ProductFormPageState extends State<ProductFormPage> {
   String _category = "";
   bool _isFeatured = false;
 
+  bool _isSubmitting = false;
+
   @override
   Widget build(BuildContext context) {
+    // get CookieRequest from Provider
+    final request = context.watch<CookieRequest>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Center(child: Text('Create Product Form')),
@@ -31,6 +42,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
+          padding: const EdgeInsets.all(8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -69,13 +81,13 @@ class _ProductFormPageState extends State<ProductFormPage> {
                     ),
                   ),
                   keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                      const TextInputType.numberWithOptions(decimal: false),
                   onChanged: (v) => setState(() => _priceText = v.trim()),
                   validator: (v) {
                     final s = v?.trim() ?? "";
                     if (s.isEmpty) return "Price cannot be empty!";
-                    final p = double.tryParse(s);
-                    if (p == null) return "Price must be a number.";
+                    final p = int.tryParse(s); // Django expects IntegerField
+                    if (p == null) return "Price must be an integer number.";
                     if (p <= 0) return "Price must be greater than 0.";
                     return null;
                   },
@@ -97,7 +109,8 @@ class _ProductFormPageState extends State<ProductFormPage> {
                   validator: (v) {
                     final s = v?.trim() ?? "";
                     if (s.isEmpty) return "Thumbnail URL cannot be empty!";
-                    final ok = Uri.tryParse(s)?.hasAbsolutePath ?? false;
+                    final uri = Uri.tryParse(s);
+                    final ok = uri != null && uri.hasAbsolutePath;
                     if (!ok ||
                         !(s.startsWith("http://") ||
                             s.startsWith("https://"))) {
@@ -162,59 +175,114 @@ class _ProductFormPageState extends State<ProductFormPage> {
                 ),
               ),
 
+              const SizedBox(height: 8),
+
               // === Save Button ===
               Align(
                 alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        showDialog<void>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title:
-                                const Text('Product saved successfully!'),
-                            content: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Text('Name: $_name'),
-                                  Text('Price: $_priceText'),
-                                  Text('Thumbnail: $_thumbnail'),
-                                  Text('Category: $_category'),
-                                  Text('Description: $_description'),
-                                  Text('Featured: ${_isFeatured ? "Yes" : "No"}'),
+                child: ElevatedButton(
+                  onPressed: _isSubmitting
+                      ? null
+                      : () async {
+                          if (!_formKey.currentState!.validate()) return;
+
+                          setState(() {
+                            _isSubmitting = true;
+                          });
+
+                          try {
+                            final priceInt = int.parse(_priceText);
+
+                            final url = '$baseUrl/api/products/create/';
+
+                            final response = await request.post(
+                              url,
+                              {
+                                'name': _name,
+                                'price': priceInt.toString(),
+                                'description': _description,
+                                'thumbnail': _thumbnail,
+                                'category': _category,
+                                'is_featured': _isFeatured.toString(),
+                              },
+                            );
+
+                            if (!mounted) return;
+
+                            if (response['ok'] == true) {
+                              // Success – product created in Django
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('Product created successfully.'),
+                                  ),
+                                );
+
+                              // Go back to previous page (e.g. menu or list)
+                              Navigator.pop(context);
+                            } else {
+                              final err = response['errors'] ??
+                                  response['error'] ??
+                                  'Failed to create product.';
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Create Failed'),
+                                  content: Text(err.toString()),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (!mounted) return;
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Error'),
+                                content: Text(
+                                  'Unexpected error while creating product: $e',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                    child: const Text('OK'),
+                                  ),
                                 ],
                               ),
-                            ),
-                            actions: [
-                              TextButton(
-                                child: const Text('OK'),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  _formKey.currentState!.reset();
-                                  setState(() {
-                                    _name = "";
-                                    _priceText = "";
-                                    _description = "";
-                                    _thumbnail = "";
-                                    _category = "";
-                                    _isFeatured = false;
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                    },
-                    child: const Text(
-                      "Save",
-                      style: TextStyle(color: Colors.white),
-                    ),
+                            );
+                          } finally {
+                            if (mounted) {
+                              setState(() {
+                                _isSubmitting = false;
+                              });
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo,
+                    foregroundColor: Colors.white,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Save'),
                 ),
               ),
             ],

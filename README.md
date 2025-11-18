@@ -89,3 +89,107 @@ theme: ThemeData(
       .copyWith(secondary: Colors.indigoAccent),
   useMaterial3: true,
 ),
+```
+------------------------------------------
+
+## Answering the Questions for Assignment 9
+
+### Q1. Why do we need to create a Dart model when fetching/sending JSON data?
+
+A **Dart model** gives structure and type safety to the JSON data we send or receive.  
+Without it, the app would rely on `Map<String, dynamic>` everywhere, which causes:
+
+- No type validation (any field can be the wrong type and crash later)
+- Unreliable null safety (missing fields cause runtime errors)
+- Low maintainability (you must remember map keys manually each time)
+
+Using a model ensures **data consistency** and makes the code easier to maintain as the project grows.
+
+---
+
+### Q2. What is the purpose of the http and CookieRequest packages in this assignment?
+
+- **http package** → general-purpose HTTP client. Handles simple GET/POST requests but does *not* manage cookies or authentication.
+- **CookieRequest package** → automatically stores Django session cookies + CSRF tokens. Required so Flutter stays logged in across pages.
+
+In short:  
+**http = basic requests**  
+**CookieRequest = authentication-aware client for Django**
+
+---
+
+### Q3. Why must the CookieRequest instance be shared across the whole Flutter app?
+
+Authentication in Django relies on the **session cookie**.  
+If each screen created its own CookieRequest:
+
+- Every page would have a different session  
+- Django would reject requests with “Unauthorized”  
+- The user would appear “logged out” on every navigation  
+
+Using **Provider** allows one shared CookieRequest instance so the user stays authenticated across all pages.
+
+---
+
+### Q4. Connectivity configuration required for Flutter ↔ Django communication
+
+To make Flutter communicate smoothly with Django, we must configure:
+
+- **10.0.2.2 in ALLOWED_HOSTS**  
+  Android emulators route localhost through 10.0.2.2.
+
+- **CORS configuration**  
+  Required for Flutter Web to access Django APIs.
+
+- **SameSite, CSRF, and cookie settings**  
+  Django must allow session cookies to be sent across origins.
+
+- **Internet permission in AndroidManifest.xml**  
+  Without this, the emulator silently blocks network access.
+
+If any of these are missing, Flutter cannot fetch data, log in, or interact with Django APIs.
+
+---
+
+### Q5. Describe the data transmission process from user input until the data is shown in Flutter
+
+1. **User fills a form** on Flutter.  
+2. Flutter **validates inputs locally**.  
+3. Flutter sends data to Django using **`CookieRequest.post()`**.  
+4. Django validates and saves it to the **database**.  
+5. Django responds with **JSON**.  
+6. Flutter parses the JSON into a **Dart model**.  
+7. The **UI updates** and displays the result.
+
+This ensures a complete end-to-end round-trip between frontend and backend.
+
+---
+
+### Q6. Explain how authentication works: login, registration, logout
+
+**Login**  
+Flutter sends username & password → Django checks → session created → CookieRequest saves cookies → Flutter navigates to the menu.
+
+**Registration**  
+Flutter sends form data → Django creates new user → logs them in → returns session cookie.
+
+**Logout**  
+Flutter calls `/api/auth/logout/` → Django clears session → CookieRequest resets.
+
+If the cookie is missing or invalid, Django returns **401 Unauthorized**.
+
+---
+
+### Q7. How I implemented the assignment based on the checklist
+
+- Tested Django deployment to ensure all API endpoints work.  
+- Implemented registration & login using Flutter forms.  
+- Integrated Django auth with Flutter via **CookieRequest + Provider**.  
+- Created a **Dart model** mirroring Django’s Product model.  
+- Built a product list page fetching data from `/api/products/`.  
+- Added **filtering** so each user sees only their own products.  
+- Created a product detail page with full attributes and a back button.  
+- Built a complete **product creation form** connected to `/api/products/create/`.  
+- Configured **CORS, cookies, ALLOWED_HOSTS**, and Android network permissions so Flutter Web & emulator can communicate reliably with Django.
+
+---
